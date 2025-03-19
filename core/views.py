@@ -11,7 +11,8 @@ from django.shortcuts import render
 from django.views.generic import ListView
 from django.shortcuts import render
 from django.db.models import Count
-
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
 
 
 
@@ -49,6 +50,11 @@ class AccountViewSet(viewsets.ModelViewSet):
 
 
 
+# Декоратор для проверки, является ли пользователь администратором
+def admin_required(view_func):
+    return user_passes_test(lambda u: u.is_staff, login_url='/admin/login/')(view_func)
+
+@admin_required
 def index(request):
     # Получаем фильтр по дате, если он указан
     date_filter = request.GET.get('date_filter', None)

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMS Statistics</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .form-group {
+            margin: 20px 0;
+        }
+        .form-group label {
+            font-weight: bold;
+        }
+        .form-group select {
+            padding: 8px;
+            width: 200px;
+            font-size: 16px;
+        }
+        .pagination {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .pagination a {
+            padding: 5px 15px;
+            margin: 0 5px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .pagination .current {
+            font-weight: bold;
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Общая статистика</h1>
+</header>
+
+<div class="container">
+    <div class="form-group">
+        <label for="date_filter">Выберите дату:</label>
+        <form method="GET" action="">
+            <input type="date" name="date_filter" id="date_filter" value="{{ date_filter }}">
+            <button type="submit">Фильтровать</button>
+        </form>
+    </div>
+
+    <ul>
+        <li>Общее количество сообщений: {{ total_sms }}</li>
+        <li>Общее количество сервисов: {{ total_services }}</li>
+        <li>Общее количество аккаунтов: {{ total_accounts }}</li>
+    </ul>
+
+    <h2>Статистика по регионам</h2>
+    <ul>
+        {% for region in region_counts %}
+            <li>{{ region.region }}: {{ region.count }} сообщений</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Статистика по сервисам</h2>
+    <ul>
+        {% for service in service_counts %}
+            <li>{{ service.name }}: {{ service.count }} сообщений</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Список SMS сообщений</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Номер телефона</th>
+                <th>Сервис</th>
+                <th>Сообщение</th>
+                <th>Дата получения</th>
+                <th>Регион</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sms in sms_list %}
+                <tr>
+                    <td>{{ sms.phone_number }}</td>
+                    <td>{{ sms.service.name }}</td>
+                    <td>{{ sms.message }}</td>
+                    <td>{{ sms.received_at }}</td>
+                    <td>{{ sms.region }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Пагинация -->
+    <div class="pagination">
+        <span class="step-links">
+            {% if sms_list.has_previous %}
+                <a href="?page=1&date_filter={{ date_filter }}">« Первая</a>
+                <a href="?page={{ sms_list.previous_page_number }}&date_filter={{ date_filter }}">Предыдущая</a>
+            {% endif %}
+
+            <span class="current">
+                Страница {{ sms_list.number }} из {{ sms_list.paginator.num_pages }}.
+            </span>
+
+            {% if sms_list.has_next %}
+                <a href="?page={{ sms_list.next_page_number }}&date_filter={{ date_filter }}">Следующая</a>
+                <a href="?page={{ sms_list.paginator.num_pages }}&date_filter={{ date_filter }}">Последняя »</a>
+            {% endif %}
+        </span>
+    </div>
+</div>
+
+</body>
+</html>

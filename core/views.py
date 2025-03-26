@@ -71,8 +71,11 @@ def index(request):
     # Получаем общее количество всех сообщений
     total_sms = SMS.objects.count()  # Это общее количество SMS за все время, не зависимо от фильтра
 
-    # Получаем статистику по регионам для всех сообщений до пагинации
-    region_counts = SMS.objects.values('region').annotate(count=Count('region'))
+    # Получаем статистику по регионам для сообщений, отфильтрованных по дате
+    if date_filter:
+        region_counts = SMS.objects.filter(received_at__date=date_filter).values('region').annotate(count=Count('region'))
+    else:
+        region_counts = SMS.objects.values('region').annotate(count=Count('region'))
 
     # Пагинация: отображаем максимум 100 сообщений на странице
     paginator = Paginator(sms_list, 100)

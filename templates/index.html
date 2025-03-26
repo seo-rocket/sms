@@ -127,7 +127,7 @@
                     <td>{{ sms.phone_number }}</td>
                     <td>{{ sms.service.name }}</td>
                     <td>{{ sms.message }}</td>
-                    <td>{{ sms.received_at }}</td>
+                    <td>{{ sms.received_at|date:"d-m-Y H:i" }}</td>
                     <td>{{ sms.region }}</td>
                 </tr>
             {% endfor %}

@@ -62,14 +62,17 @@ def index(request):
 
     # Фильтрация сообщений по дате, если выбран фильтр
     if date_filter:
-        sms_list = SMS.objects.filter(received_at__date=date_filter)
+        sms_list = SMS.objects.filter(received_at__date=date_filter).order_by('-received_at')
         total_sms_for_day = sms_list.count()  # Количество сообщений за выбранный день
     else:
-        sms_list = SMS.objects.all()
+        sms_list = SMS.objects.all().order_by('-received_at')  # Сортировка по убыванию даты
         total_sms_for_day = 0  # Если дата не выбрана, то нет сообщений за день
 
     # Получаем общее количество всех сообщений
     total_sms = SMS.objects.count()  # Это общее количество SMS за все время, не зависимо от фильтра
+
+    # Получаем статистику по регионам для всех сообщений до пагинации
+    region_counts = SMS.objects.values('region').annotate(count=Count('region'))
 
     # Пагинация: отображаем максимум 100 сообщений на странице
     paginator = Paginator(sms_list, 100)
@@ -79,10 +82,6 @@ def index(request):
     # Общая статистика
     total_services = Service.objects.count()
     total_accounts = Account.objects.count()
-
-    # Количество SMS по регионам
-    region_counts = sms_list.object_list.values('region').annotate(count=Count('region'))
-    
 
     # Статистика по сервисам с фильтрацией по дате
     service_counts = Service.objects.filter(sms__in=sms_list).annotate(count=Count('sms'))
@@ -100,5 +99,6 @@ def index(request):
     }
 
     return render(request, 'index.html', context)
+
 
 

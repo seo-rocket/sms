@@ -86,7 +86,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'sms',
         'USER': 'pweb',
-        'PASSWORD': 'Cfxfhysq1',
+        'PASSWORD': 'pweb',
         'HOST': '127.0.0.1',
         'PORT': '5432',
     }
@@ -117,7 +117,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
+
 
 USE_I18N = True
 

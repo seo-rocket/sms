@@ -87,7 +87,11 @@ def index(request):
     total_accounts = Account.objects.count()
 
     # Статистика по сервисам с фильтрацией по дате
-    service_counts = Service.objects.filter(sms__in=sms_list).annotate(count=Count('sms'))
+    if date_filter:
+        # Теперь фильтруем все сообщения за выбранную дату и аннотируем их по сервисам
+        service_counts = Service.objects.filter(sms__received_at__date=date_filter).annotate(count=Count('sms'))
+    else:
+        service_counts = Service.objects.annotate(count=Count('sms'))
 
     # Статистика по аккаунтам с фильтрацией по дате
     context = {
@@ -102,6 +106,7 @@ def index(request):
     }
 
     return render(request, 'index.html', context)
+
 
 
 

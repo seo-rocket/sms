@@ -14,8 +14,8 @@ from django.db.models import Count
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
 
-
-
+from datetime import date
+from django.core.paginator import Paginator
 
 
 class UserFilter(filters.FilterSet):
@@ -54,31 +54,44 @@ class AccountViewSet(viewsets.ModelViewSet):
 def admin_required(view_func):
     return user_passes_test(lambda u: u.is_staff, login_url='/admin/login/')(view_func)
 
+
 @admin_required
 def index(request):
     # Получаем фильтр по дате, если он указан
     date_filter = request.GET.get('date_filter', None)
-    
+
     # Фильтрация сообщений по дате, если выбран фильтр
     if date_filter:
         sms_list = SMS.objects.filter(received_at__date=date_filter)
+        total_sms_for_day = sms_list.count()  # Количество сообщений за выбранный день
     else:
         sms_list = SMS.objects.all()
+        total_sms_for_day = 0  # Если дата не выбрана, то нет сообщений за день
+
+    # Получаем общее количество всех сообщений
+    total_sms = SMS.objects.count()  # Это общее количество SMS за все время, не зависимо от фильтра
+
+    # Пагинация: отображаем максимум 100 сообщений на странице
+    paginator = Paginator(sms_list, 100)
+    page_number = request.GET.get('page')
+    sms_list = paginator.get_page(page_number)
 
     # Общая статистика
-    total_sms = sms_list.count()
     total_services = Service.objects.count()
     total_accounts = Account.objects.count()
 
     # Количество SMS по регионам
-    region_counts = SMS.objects.values('region').annotate(count=Count('region'))
+    region_counts = sms_list.object_list.values('region').annotate(count=Count('region'))
+    
 
-    # Статистика по сервисам
-    service_counts = Service.objects.annotate(count=Count('sms'))
+    # Статистика по сервисам с фильтрацией по дате
+    service_counts = Service.objects.filter(sms__in=sms_list).annotate(count=Count('sms'))
 
+    # Статистика по аккаунтам с фильтрацией по дате
     context = {
         'sms_list': sms_list,
         'total_sms': total_sms,
+        'total_sms_for_day': total_sms_for_day,
         'total_services': total_services,
         'total_accounts': total_accounts,
         'region_counts': region_counts,
@@ -87,3 +100,5 @@ def index(request):
     }
 
     return render(request, 'index.html', context)
+
+

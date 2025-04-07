@@ -25,6 +25,7 @@ from django.utils import timezone
 from datetime import timedelta
 import json
 from datetime import datetime
+from django.db.models import Q
 
 class UserFilter(filters.FilterSet):
     username = django_filters.CharFilter(field_name="username")
@@ -69,6 +70,7 @@ def index(request):
     today = timezone.now().date()
     week_ago = timezone.now() - timedelta(days=7)
     month_ago = today - timedelta(days=30)
+    filter_date = today
 
     if date_filter:
         # Если передан параметр фильтрации даты, используем его
@@ -79,11 +81,17 @@ def index(request):
         sms_list = SMS.objects.filter(received_at__date=filter_date).order_by('-received_at')
         total_sms_for_day = sms_list.count()
         filter_date_for_hourly = filter_date
+
+        # Используем фильтр даты для региональной и сервисной статистики
+        date_filter_query = Q(received_at__date=filter_date)
+        print(f"date_filter_query: {date_filter_query}")
     else:
         # Если фильтр не передан, показываем все SMS для списка, но почасовые данные - только за сегодня
         sms_list = SMS.objects.all().order_by('-received_at')
         filter_date_for_hourly = today
         total_sms_for_day = SMS.objects.filter(received_at__date=today).count()
+        # Не применяем фильтрацию по дате для региональной и сервисной статистики
+        date_filter_query = Q()
 
     # Пагинация
     paginator = Paginator(sms_list, 10)  # 10 объектов на страницу
@@ -109,13 +117,17 @@ def index(request):
     total_sms = SMS.objects.count()
 
     # Подготовка данных для графиков
-    # Данные по регионам
-    region_stats = SMS.objects.values('region').annotate(count=Count('region'))
+    # Данные по регионам с учетом фильтра даты
+    region_stats = SMS.objects.filter(date_filter_query).values('region').annotate(count=Count('region'))
     region_labels = [stat['region'] for stat in region_stats]
     region_data = [stat['count'] for stat in region_stats]
 
-    # Данные по сервисам
-    service_stats = Service.objects.annotate(sms_count=Count('sms'))
+    # Данные по сервисам с учетом фильтра даты
+    service_stats = Service.objects.annotate(
+        sms_count=Count('sms', filter=Q(sms__received_at__date=filter_date))
+    ).filter(sms_count__gt=0)  # Показываем только сервисы с SMS за выбранную дату
+
+
     service_labels = [service.name for service in service_stats]
     service_data = [service.sms_count for service in service_stats]
 
@@ -145,7 +157,13 @@ def index(request):
     timeline_data = [stat['count'] for stat in timeline_stats]
 
     service_details = []
-    for service in service_stats:
+    for service in Service.objects.all():  # Получаем все сервисы для статистики
+        # За выбранную дату (если указана) или общее количество
+        if date_filter:
+            service_sms_count = SMS.objects.filter(service=service, received_at__date=filter_date).count()
+        else:
+            service_sms_count = SMS.objects.filter(service=service).count()
+
         # За сегодня
         today_count = SMS.objects.filter(service=service, received_at__date=today).count()
 
@@ -162,16 +180,19 @@ def index(request):
             .annotate(count=Count('id'))\
             .aggregate(avg_hourly=Avg('count'))['avg_hourly'] or 0
 
-        service_details.append({
-            'name': service.name,
-            'sms_count': service.sms_count,
-            'today_count': today_count,
-            'week_count': week_count,
-            'month_count': month_count,
-            'hourly_rate': hourly_rate,
-            'id': service.id,
-            'frequency_class': 'high' if hourly_rate > 5 else 'low'  # Пример условного класса для частоты
-        })
+        # Добавляем сервис в список только если у него есть SMS за выбранную дату
+        # или если фильтр по дате не применяется
+        if not date_filter or service_sms_count > 0:
+            service_details.append({
+                'name': service.name,
+                'sms_count': service_sms_count,  # Изменено с service.sms_count на отфильтрованное значение
+                'today_count': today_count,
+                'week_count': week_count,
+                'month_count': month_count,
+                'hourly_rate': hourly_rate,
+                'id': service.id,
+                'frequency_class': 'high' if hourly_rate > 5 else 'low'  # Пример условного класса для частоты
+            })
 
     context = {
         'sms_list': page_obj,
@@ -196,7 +217,6 @@ def index(request):
     }
 
     return render(request, 'index.html', context)
-
 
 def calculate_page_range(current_page, total_pages, show_adjacent=2):
     """

@@ -66,11 +66,14 @@ def admin_required(view_func):
 
 @admin_required
 def index(request):
+    # Получение параметра фильтрации даты, если он передан в запросе
     date_filter = request.GET.get('date_filter', None)
     today = timezone.now().date()
     week_ago = timezone.now() - timedelta(days=7)
     month_ago = today - timedelta(days=30)
     filter_date = today
+    now = timezone.now()
+    last_hour_start = now - timedelta(hours=1)
 
     if date_filter:
         # Если передан параметр фильтрации даты, используем его
@@ -84,7 +87,6 @@ def index(request):
 
         # Используем фильтр даты для региональной и сервисной статистики
         date_filter_query = Q(received_at__date=filter_date)
-        print(f"date_filter_query: {date_filter_query}")
     else:
         # Если фильтр не передан, показываем все SMS для списка, но почасовые данные - только за сегодня
         sms_list = SMS.objects.all().order_by('-received_at')
@@ -127,7 +129,6 @@ def index(request):
         sms_count=Count('sms', filter=Q(sms__received_at__date=filter_date))
     ).filter(sms_count__gt=0)  # Показываем только сервисы с SMS за выбранную дату
 
-
     service_labels = [service.name for service in service_stats]
     service_data = [service.sms_count for service in service_stats]
 
@@ -156,6 +157,7 @@ def index(request):
     timeline_labels = [stat['date'].strftime('%Y-%m-%d') for stat in timeline_stats]
     timeline_data = [stat['count'] for stat in timeline_stats]
 
+    # Данные по сервисам с дополнительной информацией
     service_details = []
     for service in Service.objects.all():  # Получаем все сервисы для статистики
         # За выбранную дату (если указана) или общее количество
@@ -180,18 +182,22 @@ def index(request):
             .annotate(count=Count('id'))\
             .aggregate(avg_hourly=Avg('count'))['avg_hourly'] or 0
 
+        # Количество SMS за последний час для текущего сервиса
+        last_hour_count = SMS.objects.filter(service=service, received_at__gte=last_hour_start).count()
+
         # Добавляем сервис в список только если у него есть SMS за выбранную дату
         # или если фильтр по дате не применяется
         if not date_filter or service_sms_count > 0:
             service_details.append({
                 'name': service.name,
-                'sms_count': service_sms_count,  # Изменено с service.sms_count на отфильтрованное значение
+                'sms_count': service_sms_count,
                 'today_count': today_count,
                 'week_count': week_count,
                 'month_count': month_count,
                 'hourly_rate': hourly_rate,
+                'last_hour_count': last_hour_count,  # Добавляем количество SMS за последний час
                 'id': service.id,
-                'frequency_class': 'high' if hourly_rate > 5 else 'low'  # Пример условного класса для частоты
+                'frequency_class': 'high' if hourly_rate > 5 else 'low'
             })
 
     context = {
@@ -205,6 +211,7 @@ def index(request):
         'service_details': service_details,  # передаем агрегированные данные
         'date_filter': date_filter if date_filter else today.strftime('%Y-%m-%d'),  # Если фильтр не передан, показываем сегодняшнюю дату
         'current_date': today,
+        'last_hour_count': last_hour_count,  # Добавляем количество SMS за последний час
         # Данные для графиков
         'region_labels': json.dumps(region_labels),
         'region_data': json.dumps(region_data),

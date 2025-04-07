@@ -164,9 +164,7 @@
                             <i class="fas fa-filter me-2"></i>Фильтровать
                         </button>
                         {% if date_filter %}
-                        <a
-                            href="/"
-                            class="btn btn-outline-secondary ms-2"
+                        <a href="/" class="btn btn-outline-secondary ms-2"
                             ><i class="fas fa-times me-2"></i>Сбросить</a
                         >
                         {% endif %}
@@ -293,11 +291,15 @@
                                 <tr>
                                     <td>{{ sms.id }}</td>
                                     <td>
-                                        <span class="badge bg-primary">{{ sms.service.name }}</span>
+                                        <span class="badge bg-primary"
+                                            >{{ sms.service.name }}</span
+                                        >
                                     </td>
                                     <td>{{ sms.message }}</td>
                                     <td>{{ sms.region }}</td>
-                                    <td>{{ sms.received_at|date:"d.m.Y H:i:s" }}</td>
+                                    <td>
+                                        {{ sms.received_at|date:"d.m.Y H:i:s" }}
+                                    </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
@@ -315,40 +317,70 @@
                         <nav>
                             <ul class="pagination justify-content-center">
                                 <!-- Кнопка для перехода на первую страницу -->
-                                <li class="page-item {% if sms_list.number == 1 %}disabled{% endif %}">
-                                    <a class="page-link" href="?page=1{% if date_filter %}&date_filter={{ date_filter }}{% endif %}" aria-label="First">«</a>
+                                <li
+                                    class="page-item {% if sms_list.number == 1 %}disabled{% endif %}"
+                                >
+                                    <a
+                                        class="page-link"
+                                        href="?page=1{% if date_filter %}&date_filter={{ date_filter }}{% endif %}"
+                                        aria-label="First"
+                                        >«</a
+                                    >
                                 </li>
                                 <!-- Кнопка для перехода на предыдущую страницу -->
-                                <li class="page-item {% if not sms_list.has_previous %}disabled{% endif %}">
-                                    <a class="page-link" href="{% if sms_list.has_previous %}?page={{ sms_list.previous_page_number }}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% else %}#{% endif %}" aria-label="Previous">‹</a>
+                                <li
+                                    class="page-item {% if not sms_list.has_previous %}disabled{% endif %}"
+                                >
+                                    <a
+                                        class="page-link"
+                                        href="{% if sms_list.has_previous %}?page={{ sms_list.previous_page_number }}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% else %}#{% endif %}"
+                                        aria-label="Previous"
+                                        >‹</a
+                                    >
                                 </li>
 
                                 <!-- Динамический список страниц -->
-                                {% for num in page_range %}
-                                    {% if num %}
-                                        <li class="page-item {% if sms_list.number == num %}active{% endif %}">
-                                            <a class="page-link" href="?page={{ num }}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}">{{ num }}</a>
-                                        </li>
-                                    {% else %}
-                                        <li class="page-item disabled">
-                                            <span class="page-link">...</span>
-                                        </li>
-                                    {% endif %}
-                                {% endfor %}
+                                {% for num in page_range %} {% if num %}
+                                <li
+                                    class="page-item {% if sms_list.number == num %}active{% endif %}"
+                                >
+                                    <a
+                                        class="page-link"
+                                        href="?page={{ num }}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}"
+                                        >{{ num }}</a
+                                    >
+                                </li>
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                                {% endif %} {% endfor %}
 
                                 <!-- Кнопка для перехода на следующую страницу -->
-                                <li class="page-item {% if not sms_list.has_next %}disabled{% endif %}">
-                                    <a class="page-link" href="{% if sms_list.has_next %}?page={{ sms_list.next_page_number }}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% else %}#{% endif %}" aria-label="Next">›</a>
+                                <li
+                                    class="page-item {% if not sms_list.has_next %}disabled{% endif %}"
+                                >
+                                    <a
+                                        class="page-link"
+                                        href="{% if sms_list.has_next %}?page={{ sms_list.next_page_number }}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% else %}#{% endif %}"
+                                        aria-label="Next"
+                                        >›</a
+                                    >
                                 </li>
                                 <!-- Кнопка для перехода на последнюю страницу -->
-                                <li class="page-item {% if sms_list.number == sms_list.paginator.num_pages %}disabled{% endif %}">
-                                    <a class="page-link" href="?page={{ sms_list.paginator.num_pages }}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}" aria-label="Last">»</a>
+                                <li
+                                    class="page-item {% if sms_list.number == sms_list.paginator.num_pages %}disabled{% endif %}"
+                                >
+                                    <a
+                                        class="page-link"
+                                        href="?page={{ sms_list.paginator.num_pages }}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}"
+                                        aria-label="Last"
+                                        >»</a
+                                    >
                                 </li>
                             </ul>
                         </nav>
                     </div>
-
-
                 </div>
             </div>
             <!-- Second Row Charts -->
@@ -414,8 +446,8 @@
                                     <span
                                         class="badge badge-{{ service.frequency_class }} p-2"
                                     >
-                                        {{ service.hourly_rate|floatformat:1 }}
-                                        SMS/час
+                                        {{ service.last_hour_count }} SMS за
+                                        последний час
                                     </span>
                                 </div>
                                 <div class="row text-center">
@@ -451,11 +483,11 @@
                                             {{ service.month_count }}
                                         </div>
                                     </div>
+                                    <!-- Добавляем отображение статистики за последний час -->
                                 </div>
                                 <div class="mt-2 text-end">
-                                        <i class="fas fa-chart-line me-1"></i
-                                        >Подробнее
-                                    </a>
+                                    <i class="fas fa-chart-line me-1"></i
+                                    >Подробнее
                                 </div>
                             </div>
                         </div>

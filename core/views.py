@@ -197,8 +197,10 @@ def index(request):
                 'hourly_rate': hourly_rate,
                 'last_hour_count': last_hour_count,  # Добавляем количество SMS за последний час
                 'id': service.id,
-                'frequency_class': 'high' if hourly_rate > 5 else 'low'
+                'frequency_class': 'high' if last_hour_count > 11 else 'low'
             })
+
+
 
     context = {
         'sms_list': page_obj,

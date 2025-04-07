@@ -235,67 +235,81 @@
                 </div>
             </div>
 
-            
-            <div class="card-body">
-                <div class="row">
-                    {% for service in service_details %}
-                    <div class="col-md-6 mb-3">
-                        <div
-                            class="service-item p-3 border rounded {{ service.frequency_class }}"
+            <div class="card stats-card mb-4">
+                <div
+                    class="card-header bg-white d-flex justify-content-between align-items-center"
+                >
+                    <h5 class="mb-0">
+                        <i class="fas fa-server me-2"></i>Сервисы
+                    </h5>
+                    <div class="badge-legend">
+                        <span class="badge badge-high p-2 me-2"
+                            >Высокая нагрузка</span
                         >
+                        <span class="badge badge-low p-2">Низкая нагрузка</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for service in service_details %}
+                        <div class="col-md-6 mb-3">
                             <div
-                                class="d-flex justify-content-between align-items-center mb-2"
+                                class="service-item p-3 border rounded {{ service.frequency_class }}"
                             >
-                                <h5 class="mb-0">{{ service.name }}</h5>
-                                <span
-                                    class="badge badge-{{ service.frequency_class }} p-2"
+                                <div
+                                    class="d-flex justify-content-between align-items-center mb-2"
                                 >
-                                    {{ service.last_hour_count }} SMS за
-                                    последний час
-                                </span>
-                            </div>
-                            <div class="row text-center">
-                                <div class="col-3">
-                                    <div class="small text-muted">
-                                        Всего
-                                    </div>
-                                    <div class="fw-bold">
-                                        {{ service.sms_count }}
-                                    </div>
+                                    <h5 class="mb-0">{{ service.name }}</h5>
+                                    <span
+                                        class="badge badge-{{ service.frequency_class }} p-2"
+                                    >
+                                        {{ service.last_hour_count }} SMS за
+                                        последний час
+                                    </span>
                                 </div>
-                                <div class="col-3">
-                                    <div class="small text-muted">
-                                        Сегодня
+                                <div class="row text-center">
+                                    <div class="col-3">
+                                        <div class="small text-muted">
+                                            Всего
+                                        </div>
+                                        <div class="fw-bold">
+                                            {{ service.sms_count }}
+                                        </div>
                                     </div>
-                                    <div class="fw-bold">
-                                        {{ service.today_count }}
+                                    <div class="col-3">
+                                        <div class="small text-muted">
+                                            Сегодня
+                                        </div>
+                                        <div class="fw-bold">
+                                            {{ service.today_count }}
+                                        </div>
                                     </div>
+                                    <div class="col-3">
+                                        <div class="small text-muted">
+                                            Неделя
+                                        </div>
+                                        <div class="fw-bold">
+                                            {{ service.week_count }}
+                                        </div>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="small text-muted">
+                                            Месяц
+                                        </div>
+                                        <div class="fw-bold">
+                                            {{ service.month_count }}
+                                        </div>
+                                    </div>
+                                    <!-- Добавляем отображение статистики за последний час -->
                                 </div>
-                                <div class="col-3">
-                                    <div class="small text-muted">
-                                        Неделя
-                                    </div>
-                                    <div class="fw-bold">
-                                        {{ service.week_count }}
-                                    </div>
+                                <div class="mt-2 text-end">
+                                    <i class="fas fa-chart-line me-1"></i
+                                    >Подробнее
                                 </div>
-                                <div class="col-3">
-                                    <div class="small text-muted">
-                                        Месяц
-                                    </div>
-                                    <div class="fw-bold">
-                                        {{ service.month_count }}
-                                    </div>
-                                </div>
-                                <!-- Добавляем отображение статистики за последний час -->
-                            </div>
-                            <div class="mt-2 text-end">
-                                <i class="fas fa-chart-line me-1"></i
-                                >Подробнее
                             </div>
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
             </div>
             <!-- Charts Row -->
@@ -481,22 +495,6 @@
             </div>
 
             <!-- Services List -->
-            <div class="card stats-card mb-4">
-                <div
-                    class="card-header bg-white d-flex justify-content-between align-items-center"
-                >
-                    <h5 class="mb-0">
-                        <i class="fas fa-server me-2"></i>Сервисы
-                    </h5>
-                    <div class="badge-legend">
-                        <span class="badge badge-high p-2 me-2"
-                            >Высокая нагрузка</span
-                        >
-                        <span class="badge badge-low p-2">Низкая нагрузка</span>
-                    </div>
-                </div>
-                
-            </div>
         </div>
 
         <footer class="bg-dark text-white py-3">

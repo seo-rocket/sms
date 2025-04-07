@@ -10,5 +10,6 @@ app_name = 'core'
 urlpatterns = [
     # Корневые маршруты
     path('', index, name="index"),
+#    path('sms-list/', sms_list, name="sms_list"),  # Включаем маршруты AP
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

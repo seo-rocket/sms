@@ -1,158 +1,674 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMS Statistics</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            color: #333;
-            margin: 0;
-            padding: 0;
-        }
-        header {
-            background-color: #4CAF50;
-            color: white;
-            padding: 15px;
-            text-align: center;
-        }
-        h1 {
-            margin-bottom: 20px;
-        }
-        .container {
-            width: 80%;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-        }
-        table, th, td {
-            border: 1px solid #ddd;
-        }
-        th, td {
-            padding: 12px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        .form-group {
-            margin: 20px 0;
-        }
-        .form-group label {
-            font-weight: bold;
-        }
-        .form-group select {
-            padding: 8px;
-            width: 200px;
-            font-size: 16px;
-        }
-        .pagination {
-            margin-top: 20px;
-            text-align: center;
-        }
-        .pagination a {
-            padding: 5px 15px;
-            margin: 0 5px;
-            background-color: #4CAF50;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-        }
-        .pagination .current {
-            font-weight: bold;
-            background-color: #ddd;
-        }
-    </style>
-</head>
-<body>
+<!doctype html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SMS Dashboard</title>
+        <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+            rel="stylesheet"
+        />
+        <style>
+            :root {
+                --primary-color: #3498db;
+                --secondary-color: #2ecc71;
+                --danger-color: #e74c3c;
+                --warning-color: #f39c12;
+                --dark-color: #2c3e50;
+                --light-color: #ecf0f1;
+            }
 
-<header>
-    <h1>Общая статистика</h1>
-</header>
+            body {
+                background-color: #f8f9fa;
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            }
 
-<div class="container">
-    <div class="form-group">
-        <label for="date_filter">Выберите дату:</label>
-        <form method="GET" action="">
-            <input type="date" name="date_filter" id="date_filter" value="{{ date_filter }}">
-            <button type="submit">Фильтровать</button>
-        </form>
-    </div>
+            .dashboard-header {
+                background-color: var(--dark-color);
+                color: white;
+                padding: 15px 0;
+                margin-bottom: 20px;
+            }
 
-    <ul>
-        <li>Общее количество сообщений: {{ total_sms }}</li>
-        <li>Количество сообщений за выбранный день: {{ total_sms_for_day }}</li>
-        <li>Общее количество сервисов: {{ total_services }}</li>
-        <li>Общее количество аккаунтов: {{ total_accounts }}</li>
-    </ul>
-    
+            .stats-card {
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                transition: transform 0.3s;
+                height: 100%;
+            }
 
-    <h2>Статистика по регионам</h2>
-    <ul>
-        {% for region in region_counts %}
-            <li>{{ region.region }}: {{ region.count }} сообщений</li>
-        {% endfor %}
-    </ul>
+            .stats-card:hover {
+                transform: translateY(-5px);
+            }
 
-    <h2>Статистика по сервисам</h2>
-    <ul>
-        {% for service in service_counts %}
-            <li>{{ service.name }}: {{ service.count }} сообщений</li>
-        {% endfor %}
-    </ul>
+            .card-icon {
+                font-size: 2.5rem;
+                margin-bottom: 10px;
+            }
 
-    <h2>Список SMS сообщений</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Номер телефона</th>
-                <th>Сервис</th>
-                <th>Сообщение</th>
-                <th>Дата получения</th>
-                <th>Регион</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for sms in sms_list %}
-                <tr>
-                    <td>{{ sms.phone_number }}</td>
-                    <td>{{ sms.service.name }}</td>
-                    <td>{{ sms.message }}</td>
-                    <td>{{ sms.received_at|date:"d-m-Y H:i" }}</td>
-                    <td>{{ sms.region }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            .chart-container {
+                height: 300px;
+                margin-bottom: 20px;
+            }
 
-    <!-- Пагинация -->
-    <div class="pagination">
-        <span class="step-links">
-            {% if sms_list.has_previous %}
-                <a href="?page=1&date_filter={{ date_filter }}">« Первая</a>
-                <a href="?page={{ sms_list.previous_page_number }}&date_filter={{ date_filter }}">Предыдущая</a>
-            {% endif %}
+            .service-item {
+                border-left: 4px solid var(--primary-color);
+                margin-bottom: 10px;
+                transition: all 0.3s;
+            }
 
-            <span class="current">
-                Страница {{ sms_list.number }} из {{ sms_list.paginator.num_pages }}.
-            </span>
+            .service-item:hover {
+                background-color: rgba(52, 152, 219, 0.1);
+            }
 
-            {% if sms_list.has_next %}
-                <a href="?page={{ sms_list.next_page_number }}&date_filter={{ date_filter }}">Следующая</a>
-                <a href="?page={{ sms_list.paginator.num_pages }}&date_filter={{ date_filter }}">Последняя »</a>
-            {% endif %}
-        </span>
-    </div>
-</div>
+            .service-item.high {
+                border-left-color: var(--danger-color);
+            }
 
-</body>
+            .service-item.low {
+                border-left-color: var(--secondary-color);
+            }
+
+            .date-filter {
+                background-color: white;
+                padding: 15px;
+                border-radius: 10px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                margin-bottom: 20px;
+            }
+
+            .sms-table {
+                background-color: white;
+                border-radius: 10px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+
+            .badge-high {
+                background-color: var(--secondary-color);
+            }
+
+            .badge-low {
+                background-color: var(--danger-color);
+            }
+
+            /* Animation for cards */
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .animated-card {
+                animation: fadeIn 0.5s ease-out forwards;
+            }
+
+            .animated-card:nth-child(1) {
+                animation-delay: 0.1s;
+            }
+            .animated-card:nth-child(2) {
+                animation-delay: 0.2s;
+            }
+            .animated-card:nth-child(3) {
+                animation-delay: 0.3s;
+            }
+            .animated-card:nth-child(4) {
+                animation-delay: 0.4s;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="dashboard-header">
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h1><i class="fas fa-sms me-2"></i> SMS Dashboard</h1>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <p class="mb-0">
+                            Последнее обновление: {{ today|date:"d.m.Y H:i" }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container mb-4">
+            <!-- Date Filter -->
+            <div class="date-filter">
+                <form method="get" class="row g-3 align-items-center">
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text"
+                                ><i class="fas fa-calendar"></i
+                            ></span>
+                            <input
+                                type="date"
+                                class="form-control"
+                                id="date_filter"
+                                name="date_filter"
+                                value="{{ date_filter }}"
+                            />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter me-2"></i>Фильтровать
+                        </button>
+                        {% if date_filter %}
+                        <a
+                            href="/"
+                            class="btn btn-outline-secondary ms-2"
+                            ><i class="fas fa-times me-2"></i>Сбросить</a
+                        >
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        {% if date_filter %}
+                        <span class="badge bg-info p-2">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Показаны данные за {{ date_filter }}
+                        </span>
+                        {% else %}
+                        <span class="badge bg-secondary p-2">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Показаны все данные
+                        </span>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+
+            <!-- Summary Stats Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3 animated-card">
+                    <div class="stats-card card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <div class="card-icon">
+                                <i class="fas fa-sms"></i>
+                            </div>
+                            <h5 class="card-title">Всего SMS</h5>
+                            <h2 class="mb-0">{{ total_sms }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3 animated-card">
+                    <div class="stats-card card bg-success text-white">
+                        <div class="card-body text-center">
+                            <div class="card-icon">
+                                <i class="fas fa-server"></i>
+                            </div>
+                            <h5 class="card-title">Всего сервисов</h5>
+                            <h2 class="mb-0">{{ total_services }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3 animated-card">
+                    <div class="stats-card card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <div class="card-icon">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <h5 class="card-title">Всего аккаунтов</h5>
+                            <h2 class="mb-0">{{ total_accounts }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3 animated-card">
+                    <div class="stats-card card bg-info text-white">
+                        <div class="card-body text-center">
+                            <div class="card-icon">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                            <h5 class="card-title">SMS за день</h5>
+                            <h2 class="mb-0">
+                                {{ total_sms_for_day|default:"-" }}
+                            </h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3">
+                    <div class="card stats-card">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-line me-2"></i>Динамика
+                                SMS за 7 дней
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="timelineChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="card stats-card">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-bar me-2"></i>Почасовая
+                                статистика SMS
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="hourlyChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Second Row Charts -->
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3">
+                    <div class="card stats-card">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-pie me-2"></i>SMS по
+                                регионам
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="regionChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="card stats-card">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-pie me-2"></i>SMS по
+                                сервисам
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="serviceChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Services List -->
+            <div class="card stats-card mb-4">
+                <div
+                    class="card-header bg-white d-flex justify-content-between align-items-center"
+                >
+                    <h5 class="mb-0">
+                        <i class="fas fa-server me-2"></i>Сервисы
+                    </h5>
+                    <div class="badge-legend">
+                        <span class="badge badge-high p-2 me-2"
+                            >Высокая нагрузка</span
+                        >
+                        <span class="badge badge-low p-2">Низкая нагрузка</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for service in service_details %}
+                        <div class="col-md-6 mb-3">
+                            <div
+                                class="service-item p-3 border rounded {{ service.frequency_class }}"
+                            >
+                                <div
+                                    class="d-flex justify-content-between align-items-center mb-2"
+                                >
+                                    <h5 class="mb-0">{{ service.name }}</h5>
+                                    <span
+                                        class="badge badge-{{ service.frequency_class }} p-2"
+                                    >
+                                        {{ service.hourly_rate|floatformat:1 }}
+                                        SMS/час
+                                    </span>
+                                </div>
+                                <div class="row text-center">
+                                    <div class="col-3">
+                                        <div class="small text-muted">
+                                            Всего
+                                        </div>
+                                        <div class="fw-bold">
+                                            {{ service.sms_count }}
+                                        </div>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="small text-muted">
+                                            Сегодня
+                                        </div>
+                                        <div class="fw-bold">
+                                            {{ service.today_count }}
+                                        </div>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="small text-muted">
+                                            Неделя
+                                        </div>
+                                        <div class="fw-bold">
+                                            {{ service.week_count }}
+                                        </div>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="small text-muted">
+                                            Месяц
+                                        </div>
+                                        <div class="fw-bold">
+                                            {{ service.month_count }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-2 text-end">
+                                        <i class="fas fa-chart-line me-1"></i
+                                        >Подробнее
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- SMS List -->
+            <div class="card sms-table mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>Список SMS
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Сервис</th>
+                                    <th>Текст</th>
+                                    <th>Регион</th>
+                                    <th>Получено</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sms in sms_list %}
+                                <tr>
+                                    <td>{{ sms.id }}</td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ sms.service.name }}</span>
+                                    </td>
+                                    <td>{{ sms.message }}</td>
+                                    <td>{{ sms.region }}</td>
+                                    <td>{{ sms.received_at|date:"d.m.Y H:i:s" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">
+                                        Нет данных
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Пагинация -->
+                    <div class="pagination-container">
+                        <nav>
+                            <ul class="pagination justify-content-center">
+                                <!-- Кнопка для перехода на первую страницу -->
+                                <li class="page-item {% if sms_list.number == 1 %}disabled{% endif %}">
+                                    <a class="page-link" href="?page=1{% if date_filter %}&date_filter={{ date_filter }}{% endif %}" aria-label="First">«</a>
+                                </li>
+                                <!-- Кнопка для перехода на предыдущую страницу -->
+                                <li class="page-item {% if not sms_list.has_previous %}disabled{% endif %}">
+                                    <a class="page-link" href="{% if sms_list.has_previous %}?page={{ sms_list.previous_page_number }}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% else %}#{% endif %}" aria-label="Previous">‹</a>
+                                </li>
+
+                                <!-- Динамический список страниц -->
+                                {% for num in page_range %}
+                                    {% if num %}
+                                        <li class="page-item {% if sms_list.number == num %}active{% endif %}">
+                                            <a class="page-link" href="?page={{ num }}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}">{{ num }}</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                <!-- Кнопка для перехода на следующую страницу -->
+                                <li class="page-item {% if not sms_list.has_next %}disabled{% endif %}">
+                                    <a class="page-link" href="{% if sms_list.has_next %}?page={{ sms_list.next_page_number }}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% else %}#{% endif %}" aria-label="Next">›</a>
+                                </li>
+                                <!-- Кнопка для перехода на последнюю страницу -->
+                                <li class="page-item {% if sms_list.number == sms_list.paginator.num_pages %}disabled{% endif %}">
+                                    <a class="page-link" href="?page={{ sms_list.paginator.num_pages }}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}" aria-label="Last">»</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+
+        <footer class="bg-dark text-white py-3">
+            <div class="container text-center">
+                <p class="mb-0">&copy; 2025 SMS Dashboard</p>
+            </div>
+        </footer>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+        <script>
+            // Timeline Chart
+            const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+            const timelineChart = new Chart(timelineCtx, {
+                type: 'line',
+                data: {
+                    labels: {{ timeline_labels|safe }},
+                    datasets: [{
+                        label: 'Количество SMS',
+                        data: {{ timeline_data|safe }},
+                        backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Количество SMS: ${context.raw}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                drawBorder: false
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Hourly Chart
+            const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+            const hourlyChart = new Chart(hourlyCtx, {
+                type: 'bar',
+                data: {
+                    labels: {{ hourly_labels|safe }},
+                    datasets: [{
+                        label: 'Количество SMS',
+                        data: {{ hourly_data|safe }},
+                        backgroundColor: 'rgba(46, 204, 113, 0.7)',
+                        borderColor: 'rgba(46, 204, 113, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                drawBorder: false
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Region Chart
+            const regionCtx = document.getElementById('regionChart').getContext('2d');
+            const regionChart = new Chart(regionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: {{ region_labels|safe }},
+                    datasets: [{
+                        data: {{ region_data|safe }},
+                        backgroundColor: [
+                            'rgba(52, 152, 219, 0.7)',
+                            'rgba(46, 204, 113, 0.7)',
+                            'rgba(231, 76, 60, 0.7)',
+                            'rgba(241, 196, 15, 0.7)',
+                            'rgba(155, 89, 182, 0.7)',
+                            'rgba(52, 73, 94, 0.7)',
+                            'rgba(230, 126, 34, 0.7)',
+                            'rgba(26, 188, 156, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(52, 152, 219, 1)',
+                            'rgba(46, 204, 113, 1)',
+                            'rgba(231, 76, 60, 1)',
+                            'rgba(241, 196, 15, 1)',
+                            'rgba(155, 89, 182, 1)',
+                            'rgba(52, 73, 94, 1)',
+                            'rgba(230, 126, 34, 1)',
+                            'rgba(26, 188, 156, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((acc, data) => acc + data, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value} SMS (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Service Chart
+            const serviceCtx = document.getElementById('serviceChart').getContext('2d');
+            const serviceChart = new Chart(serviceCtx, {
+                type: 'pie',
+                data: {
+                    labels: {{ service_labels|safe }},
+                    datasets: [{
+                        data: {{ service_data|safe }},
+                        backgroundColor: [
+                            'rgba(52, 152, 219, 0.7)',
+                            'rgba(46, 204, 113, 0.7)',
+                            'rgba(231, 76, 60, 0.7)',
+                            'rgba(241, 196, 15, 0.7)',
+                            'rgba(155, 89, 182, 0.7)',
+                            'rgba(52, 73, 94, 0.7)',
+                            'rgba(230, 126, 34, 0.7)',
+                            'rgba(26, 188, 156, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(52, 152, 219, 1)',
+                            'rgba(46, 204, 113, 1)',
+                            'rgba(231, 76, 60, 1)',
+                            'rgba(241, 196, 15, 1)',
+                            'rgba(155, 89, 182, 1)',
+                            'rgba(52, 73, 94, 1)',
+                            'rgba(230, 126, 34, 1)',
+                            'rgba(26, 188, 156, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((acc, data) => acc + data, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value} SMS (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        </script>
+    </body>
 </html>
